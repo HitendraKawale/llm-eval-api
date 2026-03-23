@@ -20,6 +20,7 @@ SessionLocal = sessionmaker(
     class_=Session,
 )
 
+
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
     try:
