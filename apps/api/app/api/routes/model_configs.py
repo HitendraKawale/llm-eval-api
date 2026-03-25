@@ -4,7 +4,13 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models import ModelConfig
-from app.schemas import ModelConfigCreate, ModelConfigRead
+from app.schemas import (
+    ModelConfigCreate,
+    ModelConfigRead,
+    ModelConfigTestRequest,
+    ModelConfigTestResponse,
+)
+from app.services.model_config_test import test_model_config
 
 router = APIRouter(prefix="/model-configs", tags=["model-configs"])
 
@@ -53,3 +59,38 @@ def get_model_config(model_config_id: str, db: Session = Depends(get_db)) -> Mod
             detail="Model config not found.",
         )
     return model_config
+
+
+@router.post("/{model_config_id}/test", response_model=ModelConfigTestResponse)
+def test_saved_model_config(
+    model_config_id: str,
+    payload: ModelConfigTestRequest,
+    db: Session = Depends(get_db),
+) -> ModelConfigTestResponse:
+    model_config = db.get(ModelConfig, model_config_id)
+    if not model_config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Model config not found.",
+        )
+
+    try:
+        result = test_model_config(
+            model_config=model_config,
+            prompt=payload.prompt,
+            override_parameters=payload.parameters,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    return ModelConfigTestResponse(
+        provider=result.provider,
+        model_name=result.model_name,
+        output_text=result.output_text,
+        latency_ms=result.latency_ms,
+        raw_response=result.raw_response,
+        usage=result.usage,
+    )
