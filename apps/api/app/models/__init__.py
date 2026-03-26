@@ -1,2 +1,4 @@
 from app.models.model_config import ModelConfig
-__all__ = ["ModelConfig"]
+from app.models.dataset import Dataset, DatasetItem
+
+__all__ = ["Dataset", "DatasetItem", "ModelConfig"]
