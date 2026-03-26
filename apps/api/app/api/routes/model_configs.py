@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,7 @@ from app.schemas import (
     ModelConfigRead,
     ModelConfigTestRequest,
     ModelConfigTestResponse,
+    ModelConfigUpdate,
 )
 from app.services.model_config_test import test_model_config
 
@@ -59,6 +60,60 @@ def get_model_config(model_config_id: str, db: Session = Depends(get_db)) -> Mod
             detail="Model config not found.",
         )
     return model_config
+
+
+@router.patch("/{model_config_id}", response_model=ModelConfigRead)
+def update_model_config(
+    model_config_id: str,
+    payload: ModelConfigUpdate,
+    db: Session = Depends(get_db),
+) -> ModelConfig:
+    model_config = db.get(ModelConfig, model_config_id)
+    if not model_config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Model config not found.",
+        )
+
+    update_data = payload.model_dump(exclude_unset=True)
+
+    if "name" in update_data:
+        existing = db.scalar(
+            select(ModelConfig).where(
+                ModelConfig.name == update_data["name"],
+                ModelConfig.id != model_config_id,
+            )
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Model config with name '{update_data['name']}' already exists.",
+            )
+
+    for field, value in update_data.items():
+        setattr(model_config, field, value)
+
+    db.add(model_config)
+    db.commit()
+    db.refresh(model_config)
+    return model_config
+
+
+@router.delete("/{model_config_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_model_config(
+    model_config_id: str,
+    db: Session = Depends(get_db),
+) -> Response:
+    model_config = db.get(ModelConfig, model_config_id)
+    if not model_config:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Model config not found.",
+        )
+
+    db.delete(model_config)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{model_config_id}/test", response_model=ModelConfigTestResponse)

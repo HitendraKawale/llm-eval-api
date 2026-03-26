@@ -1,7 +1,10 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, Field, field_validator
+
+
+_ALLOWED_PROVIDERS = {"openai", "ollama", "openai_compatible"}
 
 
 class ModelConfigCreate(BaseModel):
@@ -17,9 +20,26 @@ class ModelConfigCreate(BaseModel):
     @field_validator("provider")
     @classmethod
     def validate_provider(cls, value: str) -> str:
-        allowed = {"openai", "ollama", "openai_compatible"}
-        if value not in allowed:
-            raise ValueError(f"provider must be one of: {', '.join(sorted(allowed))}")
+        if value not in _ALLOWED_PROVIDERS:
+            raise ValueError(f"provider must be one of: {', '.join(sorted(_ALLOWED_PROVIDERS))}")
+        return value
+
+
+class ModelConfigUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    provider: str | None = Field(default=None, min_length=1, max_length=50)
+    model_name: str | None = Field(default=None, min_length=1, max_length=100)
+    base_url: str | None = None
+    api_key_env_var: str | None = Field(default=None, max_length=100)
+    is_active: bool | None = None
+    is_local: bool | None = None
+    default_parameters: dict[str, Any] | None = None
+
+    @field_validator("provider")
+    @classmethod
+    def validate_provider(cls, value: str | None) -> str | None:
+        if value is not None and value not in _ALLOWED_PROVIDERS:
+            raise ValueError(f"provider must be one of: {', '.join(sorted(_ALLOWED_PROVIDERS))}")
         return value
 
 
