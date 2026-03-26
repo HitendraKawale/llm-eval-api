@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api.routes import model_configs_router, datasets_router
+from app.api.routes import model_configs_router, datasets_router, prompt_template_router
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -24,3 +24,4 @@ def health_check() -> dict[str, str | bool]:
 
 app.include_router(model_configs_router, prefix=settings.api_v1_prefix)
 app.include_router(datasets_router, prefix=settings.api_v1_prefix)
+app.include_router(prompt_template_router, prefix=settings.api_v1_prefix)

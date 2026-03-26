@@ -7,6 +7,11 @@ from app.schemas.dataset import (
 )
 from app.schemas.model_config import ModelConfigCreate, ModelConfigRead, ModelConfigUpdate
 from app.schemas.model_config_test import ModelConfigTestRequest, ModelConfigTestResponse
+from app.schemas.prompt_template import (
+    PromptTemplateCreate,
+    PromptTemplateRead,
+    PromptTemplateUpdate,
+)
 
 __all__ = [
     "DatasetCreate",
@@ -19,4 +24,7 @@ __all__ = [
     "ModelConfigUpdate",
     "ModelConfigTestRequest",
     "ModelConfigTestResponse",
+    "PromptTemplateCreate",
+    "PromptTemplateRead",
+    "PromptTemplateUpdate",
 ]
