@@ -11,7 +11,7 @@ class ProviderType(str, Enum):
     openai_compatible = "openai_compatibel"
 
 class ModelConfig(UUIDPrimaryKeyMixin, TimestampMixin, Base):
-    __tablename__ = "model_config"
+    __tablename__ = "model_configs"
 
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     provider: Mapped[str] = mapped_column(String(50), nullable=False)
