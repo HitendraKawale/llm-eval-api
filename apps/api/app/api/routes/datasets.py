@@ -9,6 +9,8 @@ from app.schemas import (
     DatasetDetailRead,
     DatasetItemCreate,
     DatasetItemRead,
+    DatasetItemsBulkCreate,
+    DatasetItemsBulkRead,
     DatasetRead,
 )
 
@@ -62,7 +64,11 @@ def get_dataset(dataset_id: str, db: Session = Depends(get_db)) -> Dataset:
     return dataset
 
 
-@router.post("/{dataset_id}/items", response_model=DatasetItemRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{dataset_id}/items",
+    response_model=DatasetItemRead,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_dataset_item(
     dataset_id: str,
     payload: DatasetItemCreate,
@@ -99,3 +105,65 @@ def create_dataset_item(
     db.commit()
     db.refresh(item)
     return item
+
+
+@router.post(
+    "/{dataset_id}/items/bulk",
+    response_model=DatasetItemsBulkRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_dataset_items_bulk(
+    dataset_id: str,
+    payload: DatasetItemsBulkCreate,
+    db: Session = Depends(get_db),
+) -> DatasetItemsBulkRead:
+    dataset = db.get(Dataset, dataset_id)
+    if not dataset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dataset not found.",
+        )
+
+    row_indexes = [item.row_index for item in payload.items]
+    if len(row_indexes) != len(set(row_indexes)):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Duplicate row_index values found in request payload.",
+        )
+
+    existing_row_indexes = set(
+        db.scalars(
+            select(DatasetItem.row_index).where(
+                DatasetItem.dataset_id == dataset_id,
+                DatasetItem.row_index.in_(row_indexes),
+            )
+        ).all()
+    )
+    if existing_row_indexes:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Row indexes already exist for this dataset: {sorted(existing_row_indexes)}",
+        )
+
+    items: list[DatasetItem] = []
+    for payload_item in payload.items:
+        items.append(
+            DatasetItem(
+                dataset_id=dataset_id,
+                row_index=payload_item.row_index,
+                input_text=payload_item.input_text,
+                expected_output=payload_item.expected_output,
+                metadata_json=payload_item.metadata_json,
+            )
+        )
+
+    db.add_all(items)
+    db.commit()
+
+    for item in items:
+        db.refresh(item)
+
+    return DatasetItemsBulkRead(
+        created_count=len(items),
+        items=items,
+    )
