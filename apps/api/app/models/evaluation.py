@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any
 
+
 from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -27,8 +28,12 @@ class EvaluationRun(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
 
     status: Mapped[str] = mapped_column(String(30), nullable=False, default="pending")
-    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     total_items: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     completed_items: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -68,11 +73,16 @@ class EvaluationResult(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     rendered_prompt: Mapped[str] = mapped_column(Text, nullable=False)
     output_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    raw_response: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
-    usage_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    raw_response: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+    usage_json: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
 
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     evaluation_run: Mapped["EvaluationRun"] = relationship(back_populates="results")
     dataset_item: Mapped["DatasetItem"] = relationship()
+
