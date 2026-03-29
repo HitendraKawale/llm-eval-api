@@ -1,3 +1,8 @@
+from app.schemas.comparison import (
+    EvaluationRunCompareQuery,
+    EvaluationRunCompareResponse,
+    EvaluationRunCompareRow,
+)
 from app.schemas.dataset import (
     DatasetCreate,
     DatasetDetailRead,
@@ -28,6 +33,9 @@ from app.schemas.prompt_template import (
 )
 
 __all__ = [
+    "EvaluationRunCompareQuery",
+    "EvaluationRunCompareResponse",
+    "EvaluationRunCompareRow",
     "DatasetCreate",
     "DatasetDetailRead",
     "DatasetItemCreate",
