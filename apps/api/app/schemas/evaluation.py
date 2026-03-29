@@ -24,6 +24,9 @@ class EvaluationResultRead(BaseModel):
     usage_json: dict[str, Any]
     latency_ms: int | None
     error_message: str | None
+    score: float | None
+    passed: bool | None
+    scoring_method: str | None
     created_at: datetime
     updated_at: datetime
 
@@ -41,6 +44,9 @@ class EvaluationRunRead(BaseModel):
     total_items: int
     completed_items: int
     failed_items: int
+    passed_items: int
+    score_mean: float | None
+    pass_rate: float | None
     created_at: datetime
     updated_at: datetime
 

@@ -3,9 +3,16 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.models import Dataset, EvaluationResult, EvaluationRun, ModelConfig, PromptTemplate
+from app.models import (
+    Dataset,
+    EvaluationResult,
+    EvaluationRun,
+    ModelConfig,
+    PromptTemplate,
+)
 from app.services.model_config_test import test_model_config
 from app.services.prompt_rendering import render_prompt_template
+from app.services.scoring import exact_match_score
 
 
 def execute_evaluation_run(
@@ -35,10 +42,16 @@ def execute_evaluation_run(
         total_items=len(dataset.items),
         completed_items=0,
         failed_items=0,
+        passed_items=0,
+        score_mean=None,
+        pass_rate=None,
     )
 
     db.add(run)
     db.flush()
+
+    scored_results_count = 0
+    score_total = 0.0
 
     for item in dataset.items:
         rendered_prompt = ""
@@ -58,6 +71,11 @@ def execute_evaluation_run(
                 override_parameters={},
             )
 
+            score, passed, scoring_method = exact_match_score(
+                item.expected_output,
+                provider_result.output_text,
+            )
+
             result = EvaluationResult(
                 evaluation_run_id=run.id,
                 dataset_item_id=item.id,
@@ -71,8 +89,19 @@ def execute_evaluation_run(
                 usage_json=provider_result.usage or {},
                 latency_ms=provider_result.latency_ms,
                 error_message=None,
+                score=score,
+                passed=passed,
+                scoring_method=scoring_method,
             )
+
             run.completed_items += 1
+
+            if passed is True:
+                run.passed_items += 1
+
+            if score is not None:
+                scored_results_count += 1
+                score_total += score
 
         except Exception as exc:
             result = EvaluationResult(
@@ -88,13 +117,29 @@ def execute_evaluation_run(
                 usage_json={},
                 latency_ms=None,
                 error_message=str(exc),
+                score=0.0 if item.expected_output is not None else None,
+                passed=False if item.expected_output is not None else None,
+                scoring_method="exact_match_normalized"
+                if item.expected_output is not None
+                else None,
             )
             run.failed_items += 1
+
+            if item.expected_output is not None:
+                scored_results_count += 1
+                score_total += 0.0
 
         db.add(result)
 
     run.status = "completed" if run.failed_items == 0 else "completed_with_errors"
     run.completed_at = datetime.now(timezone.utc)
+
+    if scored_results_count > 0:
+        run.score_mean = score_total / scored_results_count
+        run.pass_rate = run.passed_items / scored_results_count
+    else:
+        run.score_mean = None
+        run.pass_rate = None
 
     db.add(run)
     db.commit()

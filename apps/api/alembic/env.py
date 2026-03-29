@@ -7,6 +7,15 @@ from alembic import context
 
 from app.core.config import get_settings
 from app.db.base import Base
+from app.models import (
+    Dataset,
+    DatasetItem,
+    EvaluationResult,
+    EvaluationRun,
+    ModelConfig,
+    PromptTemplate,
+)  # noqa:F401
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -70,7 +79,7 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, 
+            connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
         )

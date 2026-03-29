@@ -1,8 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
@@ -38,6 +37,10 @@ class EvaluationRun(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     total_items: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     completed_items: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     failed_items: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    passed_items: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    score_mean: Mapped[float | None] = mapped_column(Float, nullable=True)
+    pass_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
 
     dataset: Mapped["Dataset"] = relationship()
     prompt_template: Mapped["PromptTemplate"] = relationship()
@@ -83,6 +86,9 @@ class EvaluationResult(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    scoring_method: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
     evaluation_run: Mapped["EvaluationRun"] = relationship(back_populates="results")
     dataset_item: Mapped["DatasetItem"] = relationship()
-
