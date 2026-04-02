@@ -11,6 +11,7 @@ from app.schemas.dataset import (
     DatasetRead,
 )
 from app.schemas.dataset_bulk import DatasetItemsBulkCreate, DatasetItemsBulkRead
+from app.schemas.dataset_import import DatasetJsonlImportRead
 from app.schemas.evaluation import (
     EvaluationResultRead,
     EvaluationRunCreate,
@@ -42,6 +43,7 @@ __all__ = [
     "DatasetItemRead",
     "DatasetItemsBulkCreate",
     "DatasetItemsBulkRead",
+    "DatasetJsonlImportRead",
     "DatasetRead",
     "EvaluationResultRead",
     "EvaluationRunCreate",
@@ -56,3 +58,4 @@ __all__ = [
     "PromptTemplateRead",
     "PromptTemplateUpdate",
 ]
+
