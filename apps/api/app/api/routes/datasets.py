@@ -12,9 +12,13 @@ from app.schemas import (
     DatasetItemsBulkCreate,
     DatasetItemsBulkRead,
     DatasetJsonlImportRead,
+    DatasetCSVImportRead,
     DatasetRead,
 )
-from app.services.dataset_import import import_dataset_items_from_jsonl
+from app.services.dataset_import import (
+    import_dataset_items_from_jsonl,
+    import_dataset_items_from_csv,
+)
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
@@ -195,6 +199,37 @@ def import_dataset_jsonl(
     )
 
     return DatasetJsonlImportRead(
+        dataset_id=dataset.id,
+        created_count=len(items),
+        starting_row_index=items[0].row_index if items else None,
+        ending_row_index=items[-1].row_index if items else None,
+    )
+
+
+@router.post(
+    "/{dataset_id}/import/csv",
+    response_model=DatasetCSVImportRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def import_dataset_csv(
+    dataset_id: str,
+    file: UploadFile,
+    db: Session = Depends(get_db),
+) -> DatasetCSVImportRead:
+    dataset = db.get(Dataset, dataset_id)
+    if not dataset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dataset not found.",
+        )
+
+    items = import_dataset_items_from_csv(
+        db=db,
+        dataset=dataset,
+        file=file,
+    )
+
+    return DatasetCSVImportRead(
         dataset_id=dataset.id,
         created_count=len(items),
         starting_row_index=items[0].row_index if items else None,
